@@ -1,8 +1,8 @@
 import json
+import nltk
 import requests
 from pprint import pprint
-import nltk
-from collections import Counter
+
 
 def prepareData():
     data = json.load(open('products-sample.json'))
@@ -35,23 +35,17 @@ def prepareData():
                 id = param['id']
                 parameters[id] = []
                 value = [value for key, value in param['values'].items()][0] if isinstance([value for key, value in param['values'].items()][0], str) else [value for key, value in param['values'].items()][0][0]
-                # parameter = id + ' ' + str(value)
                 if id == 'SIZE_EUR':
                     print(date,user,id,value)
                 if value not in parameters[id]:
                     parameters[id].append(value)
                 if value not in global_parameters[id]:
                     global_parameters[id].append(value)
-
-
             priceSum += int(var['price']['CZ1000']['price'])
             varCount += 1
         price = priceSum / varCount
         global_brands.append(brand_id)
         global_categs.append(category)
-        # for key, value in parameters.items():
-        #     value = list(set(value))
-        #     parameters[key] = value
         product = {
             "date": date,
             "user_id": user,
@@ -61,9 +55,6 @@ def prepareData():
             "params": parameters
         }
         output.append(product)
-    # for key, value in global_parameters.items():
-    #     value = list(set(value))
-    #     global_parameters[key] = value
     global_brands = list(set(global_brands))
     global_categs = list(set(global_categs))
     final = []
@@ -97,24 +88,23 @@ def prepareData():
         all.extend(brands)
         all.extend(params)
         final.append(all)
-        # print(len(all))
     pprint(final)
-    # with open('data.txt', 'w') as outfile:
-    #     json.dump(output, outfile)
+
 
 def generate():
     print([0] * 8)
 
-def translateSentence(sent):
+
+def translate_sentence(sent):
     headers = {'User-Agent': 'Mozilla/5.0'}
     payload = {'target':'de','key':'AIzaSyA_PsFfdEG7CHuxMz_NFwr4cCojdkm5E9Q','q':sent}
     url = 'https://translation.googleapis.com/language/translate/v2'
     r = requests.post(url,headers=headers,data=payload)
-    jsonR = json.loads(r.text)
-    return jsonR['data']['translations'][0]['translatedText']
+    json_r = json.loads(r.text)
+    return json_r['data']['translations'][0]['translatedText']
 
 
-def createTokens():
+def create_tokens():
     tokens = []
     for desc in descs:
         words = nltk.word_tokenize(desc)
@@ -133,13 +123,12 @@ def createTokens():
                 token['count'] += 1
                 tokens = [c for c in tokens if c['text'] != word]
                 tokens.append(token)
-
     tokens = [c for c in tokens if c['count'] >= 5]
     tokens = sorted(tokens, key=lambda k: k['count'])
     pprint(tokens)
 
 
-def createCombinations():
+def create_combinations():
     combinations = []
     for desc in descs:
         words = nltk.word_tokenize(desc)
@@ -160,9 +149,7 @@ def createCombinations():
                 comb['count'] += 1
                 combinations = [c for c in combinations if c['text'] != text]
                 combinations.append(comb)
-
     combinations = [c for c in combinations if c['count'] >= 3]
-
     for index, com in enumerate(combinations):
         if index == 0:
             continue
@@ -170,29 +157,9 @@ def createCombinations():
         wordsPost = nltk.word_tokenize(com['text'])
         if wordsPrev[-1] == wordsPost[0]:
             com["text"] = combinations[index-1]['text'] + ' ' + wordsPost[-1]
-
     combinations = sorted(combinations, key=lambda k: k['count'])
     combinations = [c for index, c in enumerate(combinations) if index < len(combinations) - 1 and c['text'] not in combinations[index+1]['text']]
     pprint(combinations)
-
-
-
-# def testData():
-#     data = json.load(open('products-sample.json'))
-#     item = data[4]
-#     parameters = []
-#     pprint(item.items())
-#     for var in item['variant_data'][0:2]:
-#         pprint(var)
-#         # params = var['params']
-#         # for param in params:
-#         #     id = param['id']
-#         #     value = [value for key, value in param['values'].items()][0] if isinstance([value for key, value in param['values'].items()][0], str) else [value for key, value in param['values'].items()][0][0]
-#         #     parameter = id + ' ' + str(value)
-#         #     parameters.append(parameter)
-#     # pprint(Counter(parameters))
-
-
 
 
 if __name__ == '__main__':
@@ -200,18 +167,3 @@ if __name__ == '__main__':
     # testData()
     prepareData()
     # print(com['text'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
