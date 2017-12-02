@@ -2,7 +2,7 @@ import json
 import nltk
 import requests
 from pprint import pprint
-
+import operator
 
 def prepareData():
     data = json.load(open('products-sample.json'))
@@ -35,12 +35,11 @@ def prepareData():
                 id = param['id']
                 parameters[id] = []
                 value = [value for key, value in param['values'].items()][0] if isinstance([value for key, value in param['values'].items()][0], str) else [value for key, value in param['values'].items()][0][0]
-                if id == 'SIZE_EUR':
-                    print(date,user,id,value)
-                if value not in parameters[id]:
-                    parameters[id].append(value)
-                if value not in global_parameters[id]:
-                    global_parameters[id].append(value)
+                if id not in ['SIZE_EUR', 'COLOR']:
+                    if value not in parameters[id]:
+                        parameters[id].append(value)
+                    if value not in global_parameters[id]:
+                        global_parameters[id].append(value)
             priceSum += int(var['price']['CZ1000']['price'])
             varCount += 1
         price = priceSum / varCount
@@ -60,13 +59,21 @@ def prepareData():
     final = []
     for prod in output:
         all = []
-        categories = []
-        brands = []
         params = []
         for cat in global_categs:
-            categories.append({cat: 1 if cat == prod['category'] else 0})
+            if cat == prod['category']:
+                right = [0] * (len(global_categs) + 1)
+                index = global_categs.index(cat)
+                right[index] = 1
+                category = {"CATEGORY": right}
+                all.append(category)
         for bra in global_brands:
-            brands.append({bra: 1 if bra == prod['brand'] else 0})
+            if bra == prod['brand']:
+                right = [0] * (len(global_brands) + 1)
+                index = global_brands.index(bra)
+                right[index] = 1
+                brand = {"BRAND": right}
+                all.append(brand)
         for key, values in global_parameters.items():
             if key in prod['params'].keys():
                 for value in values:
@@ -81,18 +88,30 @@ def prepareData():
                 right.append(1)
                 param = {key: right}
                 params.append(param)
-        all.append(prod['user_id'])
-        all.append(prod['date'])
-        all.append(prod['price'])
-        all.extend(categories)
-        all.extend(brands)
+        all.append({"USER": prod['user_id']})
+        all.append({"DATE": prod['date']})
+        all.append({"PRICE": prod['price']})
         all.extend(params)
         final.append(all)
     pprint(final)
 
 
-def generate():
-    print([0] * 8)
+def mostFoundProducts():
+    data = json.load(open('products-sample.json'))
+    views = []
+    for item in data[0:900]:
+        user = item['user_id']
+        date = item['date']
+        product_id = item['product_id']
+        view = {
+            "user": user,
+            "date": date,
+            "product": product_id
+        }
+        views.append(view)
+    views.sort(key=lambda x: (x["user"], x["date"]), reverse=True)
+    pprint(views)
+
 
 
 def translate_sentence(sent):
@@ -106,6 +125,7 @@ def translate_sentence(sent):
 
 def create_tokens():
     tokens = []
+    descs  = []
     for desc in descs:
         words = nltk.word_tokenize(desc)
         words = [w.lower() for w in words]
@@ -165,5 +185,6 @@ def create_combinations():
 if __name__ == '__main__':
     # generate()
     # testData()
-    prepareData()
+    # prepareData()
+    mostFoundProducts()
     # print(com['text'])
